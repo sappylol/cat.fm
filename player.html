@@ -43,6 +43,7 @@
     }
 
     window.addEventListener("message", ({ data }) => {
+        console.log("MESSAGE RECEIVED", e.data);
         if (data?.type !== "cmd") return;
 
         if (!player) {
