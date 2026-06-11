@@ -3,41 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #player {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
     <div id="player"></div>
 </body>
-<style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-    }
-
-    #player {
-        width: 100%;
-        height: 100%;
-    }
-</style>
-</html>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     let player;
-    const id = new URLSearchParams(window.location.search).get('id') ?? "dQw4w9WgXcQ"
+    const videoId = new URLSearchParams(location.search).get("id") || "0W80OqcWnqc";
 
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            height: '390',
-            width: '640',
-            videoId: id,
+    function createPlayer() {
+        if (player) return
+
+        player = new YT.Player("player", {
+            width: "100%",
+            height: "100%",
+            videoId,
         });
     }
 
-    window.addEventListener("message", (event) => {
-        if (event.data.type != "cmd"){return;}
-        else{player[event.data.func](event.data.args)}
-    });
+    if (window.YT?.Player) {
+        createPlayer()
+    } else {
+        window.onYouTubeIframeAPIReady = createPlayer
+    }
+
+    window.addEventListener("message", ({ data }) => {
+        if (data?.type !== "cmd") return;
+
+        if (!player) {
+            console.error("Player not ready")
+            return;
+        }
+
+        const fn = player[data.func]
+
+        if (typeof fn !== "function") {
+            console.error(`Unknown method: ${data.func}`)
+            return;
+        }
+
+        try {
+            if (Array.isArray(data.args)) {
+                fn.apply(player, data.args)
+            } else if (data.args !== undefined) {
+                fn.call(player, data.args)
+            } else {
+                fn.call(player)
+            }
+        } catch {
+            console.error(`Command failed: ${data.func}`)
+        }
+    })
 </script>
+</body>
+</html>
